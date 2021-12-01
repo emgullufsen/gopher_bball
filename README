@@ -1,3 +1,9 @@
+A bash script to generate .txt file with NBA Scores for today.
+
+Invoke with `bash gen.sh` (or, if your bash is in /usr/local/bin, just use
+`./gen.sh`)
+
+Data gotten from data.nba.net - Thanks - Rik E.
 _____________________
 |  NBA SCOREBOARD   |
 =====================
