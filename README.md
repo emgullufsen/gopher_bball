@@ -1,2 +1,15 @@
-# gopher_bball
-Create gopher files for NBA standings
+_____________________
+|  NBA SCOREBOARD   |
+=====================
+|   HOME  |  AWAY   |
+=====================
+|  ATL -  |  IND -  |
+|  DEN -  |  ORL -  |
+|  MIN -  |  WAS -  |
+|  PHI -  |  BOS -  |
+|  CLE -  |  MIA -  |
+|  CHA -  |  MIL -  |
+|  DAL -  |  NOP -  |
+|  HOU -  |  OKC -  |
+|  SAC -  |  LAC -  |
+=====================

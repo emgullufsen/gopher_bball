@@ -12,7 +12,7 @@ standings_endp="/prod/v1/current/standings_conference.json"
 info_file=${work_dir}/info_j.json
 scores_file=${work_dir}/scores_j.json
 standings_file=${work_dir}/standings_j.json
-results_file=${work_dir}/sesults.txt
+results_file=score_results.txt
 scores_tbldef_file=${work_dir}/scores.tbldef
 standings_tbldef_file=${work_dir}/standings.tbldef
 scores_tbl_file_nroff=${work_dir}/scores.nroff.tbl
@@ -31,7 +31,6 @@ scores_url=$base_url$today_endp
 curl -s $scores_url > $scores_file
 #RETRIEVE STANDINGS JSON DATA (4)
 curl -s $base_url$standings_endp > $standings_file
-rm -vf $results_file
 
 cat << EHERE0 > $scores_tbldef_file
 .TS
@@ -72,8 +71,10 @@ jq -rc '.games | .[]' $scores_file | while read s; do
 	fi
 done
 
-cat $scores_tbl_file_ascii
+echo "=====================" >> $scores_tbl_file_ascii
 
+cat $scores_tbl_file_ascii
+cp $scores_tbl_file_ascii $results_file
 echo ".TE" >> $scores_tbldef_file
 tbl $scores_tbldef_file | nroff > $scores_tbl_file_nroff
 #on BSD sed wants "" as first arg, not so on Linux
