@@ -4,6 +4,7 @@ Invoke with `bash gen.sh` (or, if your bash is in /usr/local/bin, just use
 `./gen.sh`)
 
 Data gotten from data.nba.net - Thanks - Rik E.
+Sample output (from 12/1, before games started for the day so scores blank)
 _____________________
 |  NBA SCOREBOARD   |
 =====================
