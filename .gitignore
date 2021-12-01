@@ -1,1 +1,4 @@
 gopher_files/
+*.txt
+*.json
+gophermap
