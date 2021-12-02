@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/usr/local/bin/bash
 #invoke with `bash gen.sh` if this isn't your bash location
 work_dir=./gopher_files
 mkdir -p $work_dir
@@ -79,6 +79,6 @@ echo ".TE" >> $scores_tbldef_file
 tbl $scores_tbldef_file | nroff > $scores_tbl_file_nroff
 #on BSD sed wants "" as first arg, not so on Linux
 #using sed to remove blank lines coming out of tbl/nroff
-sed -i '/^[[:space:]]*$/d' $scores_tbl_file_nroff
+sed -i.bak '/^[[:space:]]*$/d' $scores_tbl_file_nroff
 #sed -i "" '/^[[:space:]]*$/d' $scores_tbl_file_nroff
 cat $scores_tbl_file_nroff
