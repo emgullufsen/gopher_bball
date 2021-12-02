@@ -1,4 +1,4 @@
-#!/usr/local/bin/bash
+#!/usr/bin/bash
 #invoke with `bash gen.sh` if this isn't your bash location
 work_dir=./gopher_files
 mkdir -p $work_dir
