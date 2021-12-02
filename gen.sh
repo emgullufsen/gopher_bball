@@ -12,11 +12,12 @@ standings_endp="/prod/v1/current/standings_conference.json"
 info_file=${work_dir}/info_j.json
 scores_file=${work_dir}/scores_j.json
 standings_file=${work_dir}/standings_j.json
-results_file=score_results.txt
 scores_tbldef_file=${work_dir}/scores.tbldef
 standings_tbldef_file=${work_dir}/standings.tbldef
 scores_tbl_file_nroff=${work_dir}/scores.nroff.tbl
 scores_tbl_file_ascii=${work_dir}/scores.ascii.tbl
+scores_final_ascii=./scores_ascii.txt
+scores_final_utf8=./scores_utf-8.txt
 
 #GRAB BASE NBA JSON DATA (LINKS) (1)
 #using -s (--silent)
@@ -73,12 +74,13 @@ done
 
 echo "=====================" >> $scores_tbl_file_ascii
 
-cat $scores_tbl_file_ascii
-cp $scores_tbl_file_ascii $results_file
 echo ".TE" >> $scores_tbldef_file
 tbl $scores_tbldef_file | nroff > $scores_tbl_file_nroff
 #on BSD sed wants "" as first arg, not so on Linux
 #using sed to remove blank lines coming out of tbl/nroff
 sed -i.bak '/^[[:space:]]*$/d' $scores_tbl_file_nroff
 #sed -i "" '/^[[:space:]]*$/d' $scores_tbl_file_nroff
-cat $scores_tbl_file_nroff
+cp $scores_tbl_file_ascii $scores_final_ascii
+cp $scores_tbl_file_nroff $scores_final_utf8
+cat $scores_final_ascii
+cat $scores_final_utf8

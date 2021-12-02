@@ -1,22 +1,50 @@
-A bash script to generate .txt file with NBA Scores for today.
-
-Invoke with `bash gen.sh` (or, if your bash is in /usr/local/bin, just use
-`./gen.sh`)
-
-Data gotten from data.nba.net - Thanks - Rik E.
-Sample output (from 12/1, before games started for the day so scores blank)
+gopher_bball - generate ascii & utf-8 NBA Scoreboards in bash
+-------------------------------------------------------------
+ascii)
 _____________________
 |  NBA SCOREBOARD   |
 =====================
 |   HOME  |  AWAY   |
 =====================
-|  ATL -  |  IND -  |
-|  DEN -  |  ORL -  |
-|  MIN -  |  WAS -  |
-|  PHI -  |  BOS -  |
-|  CLE -  |  MIA -  |
-|  CHA -  |  MIL -  |
-|  DAL -  |  NOP -  |
-|  HOU -  |  OKC -  |
-|  SAC -  |  LAC -  |
+| ATL 114 | IND 111 |
+| DEN 103 | ORL 108 |
+| MIN 107 | WAS 115 |
+| PHI  87 | BOS  88 |
+| CLE 111 | MIA  85 |
+| CHA 125 | MIL 127 |
+| DAL 139 | NOP 107 |
+| HOU 114 | OKC 110 |
+| SAC  62 | LAC  52 |
 =====================
+
+utf-8)
+┌──────────────────────┐
+│   NBA SCOREBOARD     │
+├──────────┬───────────┤
+│  AWAY    │   HOME    │
+├────┬─────┼─────┬─────┤
+│ATL │ 114 │ IND │ 111 │
+├────┼─────┼─────┼─────┤
+│DEN │ 103 │ ORL │ 108 │
+├────┼─────┼─────┼─────┤
+│MIN │ 107 │ WAS │ 115 │
+├────┼─────┼─────┼─────┤
+│PHI │ 87  │ BOS │ 88  │
+├────┼─────┼─────┼─────┤
+│CLE │ 111 │ MIA │ 85  │
+├────┼─────┼─────┼─────┤
+│CHA │ 125 │ MIL │ 127 │
+├────┼─────┼─────┼─────┤
+│DAL │ 139 │ NOP │ 107 │
+├────┼─────┼─────┼─────┤
+│HOU │ 114 │ OKC │ 110 │
+├────┼─────┼─────┼─────┤
+│SAC │ 62  │ LAC │ 52  │
+└────┴─────┴─────┴─────┘
+
+Invocation: `bash gen.sh`
+or          `./gen.sh` (if your bash lives in /usr/local/bin)
+
+Data thanks to data.nba.net
+
+-Eric
