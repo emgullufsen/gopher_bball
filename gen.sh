@@ -57,7 +57,7 @@ jq -rc '.games | .[]' $scores_file | while read s; do
 	da_len=${#da[@]} 
 	if [[ $da_len -eq 2 ]]
 	then
-		echo "|  ${da[0]} -  |  ${da[1]} -  |" >> $scores_tbl_file_ascii
+		echo "|  ${da[0]}  -  |  ${da[1]}  -  |" >> $scores_tbl_file_ascii
 		echo "${da[0]}@-@${da[1]}@-" >> $scores_tbldef_file
 	elif [[ $da_len -eq 4 ]]
 	then
