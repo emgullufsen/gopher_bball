@@ -15,9 +15,9 @@ standings_file=${work_dir}/standings_j.json
 scores_tbldef_file=${work_dir}/scores.tbldef
 standings_tbldef_file=${work_dir}/standings.tbldef
 scores_tbl_file_nroff=${work_dir}/scores.nroff.tbl
-scores_tbl_file_ascii=${work_dir}/scores.ascii.tbl
-scores_final_ascii=./scores_ascii.txt
-scores_final_utf8=./scores_utf-8.txt
+scores_tbl_file_handroll=${work_dir}/scores.handroll.tbl
+scores_final_handroll=./scores_handroll.txt
+scores_final_nroff=./scores_nroff.txt
 
 #GRAB BASE NBA JSON DATA (LINKS) (1)
 #using -s (--silent)
@@ -33,6 +33,7 @@ curl -s $scores_url > $scores_file
 #RETRIEVE STANDINGS JSON DATA (4)
 curl -s $base_url$standings_endp > $standings_file
 
+#this is a 'table definition' for tbl and nroff
 cat << EHERE0 > $scores_tbldef_file
 .TS
 tab(@),allbox;
@@ -43,7 +44,8 @@ NBA SCOREBOARD
 AWAY@HOME
 EHERE0
 
-cat << EHERE > $scores_tbl_file_ascii
+# originally I hand-rolled the table, so to speak...
+cat << EHERE > $scores_tbl_file_handroll
 _____________________
 |  NBA SCOREBOARD   |
 =====================
@@ -57,30 +59,31 @@ jq -rc '.games | .[]' $scores_file | while read s; do
 	da_len=${#da[@]} 
 	if [[ $da_len -eq 2 ]]
 	then
-		echo "| ${da[0]}  -  | ${da[1]}  -  |" >> $scores_tbl_file_ascii
+		echo "| ${da[0]}  -  | ${da[1]}  -  |" >> $scores_tbl_file_handroll
 		echo "${da[0]}@-@${da[1]}@-" >> $scores_tbldef_file
 	elif [[ $da_len -eq 4 ]]
 	then
 		vts=`printf '%3s' "${da[1]}"`
 		hts=`printf '%3s' "${da[3]}"`
-		echo "| ${da[0]} $vts | ${da[2]} $hts |" >> $scores_tbl_file_ascii
+		echo "| ${da[0]} $vts | ${da[2]} $hts |" >> $scores_tbl_file_handroll
 		echo "${da[0]}@${da[1]}@${da[2]}@${da[3]}" >> $scores_tbldef_file
  	else
-		echo "bad game data" >> $scores_tbl_file_ascii
+		echo "bad game data" >> $scores_tbl_file_handroll
 		echo "bad@game@data@here" >> $scores_tbldef_file
 		
 	fi
 done
 
-echo "=====================" >> $scores_tbl_file_ascii
+echo "=====================" >> $scores_tbl_file_handroll
 
 echo ".TE" >> $scores_tbldef_file
-tbl $scores_tbldef_file | nroff > $scores_tbl_file_nroff
+
+tbl $scores_tbldef_file | nroff -Tascii > $scores_tbl_file_nroff
 #on BSD sed wants "" as first arg, not so on Linux
 #using sed to remove blank lines coming out of tbl/nroff
 sed -i.bak '/^[[:space:]]*$/d' $scores_tbl_file_nroff
 #sed -i "" '/^[[:space:]]*$/d' $scores_tbl_file_nroff
-cp $scores_tbl_file_ascii $scores_final_ascii
-cp $scores_tbl_file_nroff $scores_final_utf8
-cat $scores_final_ascii
-cat $scores_final_utf8
+cp $scores_tbl_file_handroll $scores_final_handroll
+cp $scores_tbl_file_nroff $scores_final_nroff
+cat $scores_final_handroll
+cat $scores_final_nroff
