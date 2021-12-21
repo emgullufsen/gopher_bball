@@ -16,13 +16,16 @@ scores_tbldef_file=${work_dir}/scores.tbldef
 standings_tbldef_file=${work_dir}/standings.tbldef
 scores_tbl_file_nroff=${work_dir}/scores.nroff.tbl
 scores_tbl_file_handroll=${work_dir}/scores.handroll.tbl
+standings_tbl_file=${work_dir}/standings.tbl
 scores_final_handroll=./scores_handroll.txt
 scores_final_nroff=./scores_nroff.txt
+standings_final=./standings.txt
 
 #GRAB BASE NBA JSON DATA (LINKS) (1)
 #using -s (--silent)
 curl -s ${base_url}${links_endp} > $info_file
-
+tdate=$(jq -rc .links.currentDate $info_file)
+gdate=$(date)
 #GET SCOREBOARD ENDPOINT FROM RETRIEVED JSON (FROM 1) (2)
 # using -r (--raw-output)
 today_endp=`jq -r .links.todayScoreboard $info_file`
@@ -53,6 +56,22 @@ _____________________
 =====================
 EHERE
 
+function unpack_standings {
+	if [[ $1 -eq 0 ]]
+	then
+		z=$(jq -r '.league.standard.conference.east | .[]' $standings_file)
+	elif [[ $1 -eq 1 ]]
+	then
+		z=$(jq -r '.league.standard.conference.west | .[]' $standings_file)
+	else
+		exit
+	fi
+	echo $z | while read s; do
+		tn=$(echo $s | jq -r '.teamSitesOnly.teamName')
+		echo "${tn}"
+	done
+}
+
 jq -rc '.games | .[]' $scores_file | while read s; do
 	d=`echo $s | jq -rc .vTeam.triCode,.vTeam.score,.hTeam.triCode,.hTeam.score`
 	da=($d)
@@ -78,7 +97,9 @@ echo "=====================" >> $scores_tbl_file_handroll
 
 echo ".TE" >> $scores_tbldef_file
 
-tbl $scores_tbldef_file | nroff -Tascii > $scores_tbl_file_nroff
+echo "Game Date: ${tdate:4:2}-${tdate:6:2}-${tdate:0:4}" > $scores_tbl_file_nroff
+echo "Scoreboard Generated: ${gdate}" >> $scores_tbl_file_nroff
+tbl $scores_tbldef_file | nroff -Tascii >> $scores_tbl_file_nroff
 #on BSD sed wants "" as first arg, not so on Linux
 #using sed to remove blank lines coming out of tbl/nroff
 sed -i.bak '/^[[:space:]]*$/d' $scores_tbl_file_nroff
@@ -87,3 +108,4 @@ cp $scores_tbl_file_handroll $scores_final_handroll
 cp $scores_tbl_file_nroff $scores_final_nroff
 cat $scores_final_handroll
 cat $scores_final_nroff
+unpack_standings 0
