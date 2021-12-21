@@ -1,11 +1,15 @@
 #!/usr/local/bin/bash
 #invoke with `bash gen.sh` if this isn't your bash location
+#by Eric Gullufsen
+
 work_dir=./gopher_files
 mkdir -p $work_dir
 function cleanup {
 	rm -rf ${work_dir}
 }
 trap cleanup EXIT
+
+#files and endpoints - global vars
 base_url="http://data.nba.net/10s"
 links_endp="/prod/v1/today.json"
 standings_endp="/prod/v1/current/standings_conference.json"
@@ -21,14 +25,14 @@ scores_final_handroll=./scores_handroll.txt
 scores_final_nroff=./scores_nroff.txt
 standings_final=./standings.txt
 
-#GRAB BASE NBA JSON DATA (LINKS) (1)
-#using -s (--silent)
-curl -s ${base_url}${links_endp} > $info_file
-tdate=$(jq -rc .links.currentDate $info_file)
+#Grab Base data.nba.net JSON w/ links we need (endpoints)
+curl --silent ${base_url}${links_endp} > $info_file
+tdate=$(jq --raw-output --compact-output .links.currentDate $info_file)
 gdate=$(date)
-#GET SCOREBOARD ENDPOINT FROM RETRIEVED JSON (FROM 1) (2)
+
+#Extract todayScoreboard Endpoint (URL)
 # using -r (--raw-output)
-today_endp=`jq -r .links.todayScoreboard $info_file`
+today_endp=`jq --raw-output .links.todayScoreboard $info_file`
 #form full scores endpoint URL
 scores_url=$base_url$today_endp
 #RETRIEVE SCOREBOARD JSON DATA (3)
@@ -56,6 +60,9 @@ _____________________
 =====================
 EHERE
 
+#would rather have arg be the jq selector instead of 0/1 switch,
+#but things get messy when you try to interpolate selectors like that
+#...it seems...
 function unpack_standings {
 	if [[ $1 -eq 0 ]]
 	then
