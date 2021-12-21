@@ -17,13 +17,18 @@ info_file=${work_dir}/info_j.json
 scores_file=${work_dir}/scores_j.json
 standings_file=${work_dir}/standings_j.json
 scores_tbldef_file=${work_dir}/scores.tbldef
-standings_tbldef_file=${work_dir}/standings.tbldef
+standings_tbldef_file_west=${work_dir}/standings_west.tbldef
+standings_tbldef_file_east=${work_dir}/standings_east.tbldef
+standings_jqfile_west=./west.jq
+standings_jqfile_east=./east.jq
 scores_tbl_file_nroff=${work_dir}/scores.nroff.tbl
 scores_tbl_file_handroll=${work_dir}/scores.handroll.tbl
-standings_tbl_file=${work_dir}/standings.tbl
+standings_tbl_file_west=${work_dir}/standings_west.tbl
+standings_tbl_file_east=${work_dir}/standings_east.tbl
 scores_final_handroll=./scores_handroll.txt
 scores_final_nroff=./scores_nroff.txt
-standings_final=./standings.txt
+standings_final_east=./standings_east.txt
+standings_final_west=./standings_west.txt
 
 #Grab Base data.nba.net JSON w/ links we need (endpoints)
 curl --silent ${base_url}${links_endp} > $info_file
@@ -52,32 +57,41 @@ AWAY@HOME
 EHERE0
 
 # originally I hand-rolled the table, so to speak...
-cat << EHERE > $scores_tbl_file_handroll
+cat << EHERE3 > $scores_tbl_file_handroll
 _____________________
 |  NBA SCOREBOARD   |
 =====================
 |   HOME  |  AWAY   |
 =====================
-EHERE
+EHERE3
 
-#would rather have arg be the jq selector instead of 0/1 switch,
-#but things get messy when you try to interpolate selectors like that
-#...it seems...
-function unpack_standings {
-	if [[ $1 -eq 0 ]]
-	then
-		z=$(jq -r '.league.standard.conference.east | .[]' $standings_file)
-	elif [[ $1 -eq 1 ]]
-	then
-		z=$(jq -r '.league.standard.conference.west | .[]' $standings_file)
-	else
-		exit
-	fi
-	echo $z | while read s; do
-		tn=$(echo $s | jq -r '.teamSitesOnly.teamName')
-		echo "${tn}"
-	done
+function begin_tbldef_standings {
+cat << EHERE2 > $1
+.TS
+tab(@),allbox;
+css
+ccc.
+$2
+EHERE2
 }
+
+begin_tbldef_standings $standings_tbldef_file_east "EAST"
+begin_tbldef_standings $standings_tbldef_file_west "WEST"
+
+function generate_standings {
+	jq -rc -f $1 $standings_file | while read s; do
+		tn=$(echo $s | jq -rc '.teamSitesOnly.teamName')
+		tw=$(echo $s | jq -rc '.win')
+		tl=$(echo $s | jq -rc '.loss')
+		#ta=($t)
+		ta_len=${#da[@]}
+		echo "${tn}@${tw}@${tl}" >> $2
+	done
+	echo ".TE" >> $2
+}
+
+generate_standings $standings_jqfile_east $standings_tbldef_file_east
+generate_standings $standings_jqfile_west $standings_tbldef_file_west
 
 jq -rc '.games | .[]' $scores_file | while read s; do
 	d=`echo $s | jq -rc .vTeam.triCode,.vTeam.score,.hTeam.triCode,.hTeam.score`
@@ -107,12 +121,19 @@ echo ".TE" >> $scores_tbldef_file
 echo "Game Date: ${tdate:4:2}-${tdate:6:2}-${tdate:0:4}" > $scores_tbl_file_nroff
 echo "Scoreboard Generated: ${gdate}" >> $scores_tbl_file_nroff
 tbl $scores_tbldef_file | nroff -Tascii >> $scores_tbl_file_nroff
+tbl $standings_tbldef_file_east | nroff -Tascii > $standings_tbl_file_east
+tbl $standings_tbldef_file_west | nroff -Tascii > $standings_tbl_file_west
 #on BSD sed wants "" as first arg, not so on Linux
 #using sed to remove blank lines coming out of tbl/nroff
 sed -i.bak '/^[[:space:]]*$/d' $scores_tbl_file_nroff
+sed -i.bak '/^[[:space:]]*$/d' $standings_tbl_file_east
+sed -i.bak '/^[[:space:]]*$/d' $standings_tbl_file_west
 #sed -i "" '/^[[:space:]]*$/d' $scores_tbl_file_nroff
 cp $scores_tbl_file_handroll $scores_final_handroll
 cp $scores_tbl_file_nroff $scores_final_nroff
+cp $standings_tbl_file_east $standings_final_east
+cp $standings_tbl_file_west $standings_final_west
 cat $scores_final_handroll
 cat $scores_final_nroff
-unpack_standings 0
+cat $standings_final_east
+cat $standings_final_west
