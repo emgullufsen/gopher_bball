@@ -124,7 +124,7 @@ sed -i.bak '/^[[:space:]]*$/d' $scores_tbl_file_nroff
 sed -i.bak '/^[[:space:]]*$/d' $standings_tbl_file_east
 sed -i.bak '/^[[:space:]]*$/d' $standings_tbl_file_west
 #sed -i "" '/^[[:space:]]*$/d' $scores_tbl_file_nroff
-paste $standings_tbl_file_east $standings_tbl_file_west $scores_tbl_file_nroff > $nba_final
+paste -d' ' $standings_tbl_file_east $standings_tbl_file_west $scores_tbl_file_nroff > $nba_final
 echo "Game Date: ${tdate:4:2}-${tdate:6:2}-${tdate:0:4}" >> $nba_final
 echo "Standings/Scoreboard Generated: ${gdate}" >> $nba_final
 cat $nba_final
