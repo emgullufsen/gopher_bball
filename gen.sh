@@ -1,4 +1,4 @@
-#!/usr/local/bin/bash
+#!/usr/bin/bash
 #invoke with `bash gen.sh` if this isn't your bash location
 #by Eric Gullufsen
 
@@ -9,11 +9,10 @@ function cleanup {
 }
 trap cleanup EXIT
 
+# get environment (esp. variable SPORTRADAR_API_KEY) from secret file
+source .env
+
 #files and endpoints - global vars
-base_url="http://data.nba.net/10s"
-links_endp="/prod/v1/today.json"
-standings_endp="/prod/v1/current/standings_conference.json"
-info_file=${work_dir}/info_j.json
 scores_file=${work_dir}/scores_j.json
 standings_file=${work_dir}/standings_j.json
 scores_tbldef_file=${work_dir}/scores.tbldef
@@ -22,45 +21,81 @@ standings_tbldef_file_east=${work_dir}/standings_east.tbldef
 standings_jqfile_west=./west.jq
 standings_jqfile_east=./east.jq
 scores_tbl_file_nroff=${work_dir}/scores.nroff.tbl
-scores_tbl_file_handroll=${work_dir}/scores.handroll.tbl
 standings_tbl_file_west=${work_dir}/standings_west.tbl
 standings_tbl_file_east=${work_dir}/standings_east.tbl
 nba_final=./nba_final.txt
 
-#Grab Base data.nba.net JSON w/ links we need (endpoints)
-curl --silent ${base_url}${links_endp} > $info_file
-tdate=$(jq --raw-output --compact-output .links.currentDate $info_file)
-gdate=$(date)
+baseUrl="https://api.sportradar.us/nba/trial/v7"
+locale="en"
+tzone="America/New_York"
 
-#Extract todayScoreboard Endpoint (URL)
-# using -r (--raw-output)
-today_endp=`jq --raw-output .links.todayScoreboard $info_file`
-#form full scores endpoint URL
-scores_url=$base_url$today_endp
-#RETRIEVE SCOREBOARD JSON DATA (3)
-curl -s $scores_url > $scores_file
-#RETRIEVE STANDINGS JSON DATA (4)
-curl -s $base_url$standings_endp > $standings_file
+# create m, d, and Y variables containing date info
+read -r m d Y <<< "$(TZ='America/New_York' date +'%m %d %Y')"
+games_endpoint="/${locale}/games/${Y}/${m}/${d}/schedule.json"
+key_pararm="?api_key=${SPORTRADAR_API_KEY}"
+
+# NOTE: status of games is 'scheduled', 'inprogress', or 'closed'
+#       if status=='inprogress' or 'closed', then 
+#       the game entry has home_points and away_points members
+# ok, get games for today
+# example: # https://api.sportradar.us/nba/trial/v7/en/games/2023/01/08/schedule.json?api_key=<KEY>
+
+curl --location --request GET ${baseUrl}${games_endpoint}${key_pararm} > $scores_file
+
+# cat $scores_file
+
+# jq -rc '.games | .[]' $scores_file
 
 #this is a 'table definition' for tbl and nroff
 cat << EHERE0 > $scores_tbldef_file
 .TS
 tab(@),allbox;
-csss
-cscs
-cccc.
+cssss
+cscsc
+ccccc.
 NBA SCOREBOARD
-AWAY@HOME
+AWAY@HOME@
 EHERE0
 
-# originally I hand-rolled the table, so to speak...
-cat << EHERE3 > $scores_tbl_file_handroll
-_____________________
-|  NBA SCOREBOARD   |
-=====================
-|   HOME  |  AWAY   |
-=====================
-EHERE3
+jq -rc '.games | .[]' $scores_file | while read s; do
+	status=`echo $s | jq -rc .status`
+	if [ "$status" = "closed" ] || [ "$status" = "inprogress" ]
+	then
+		d=`echo $s | jq -rc .away.alias,.home.alias,.id,.scheduled`
+		da=($d)
+		scores_endpoint="/${locale}/games/${da[2]}/boxscore.json"
+		game_filename="${work_dir}/game-${da[2]}.json"
+		sleep 2
+		curl --location --request GET ${baseUrl}${scores_endpoint}${key_pararm} > $game_filename
+		s=`jq -rc '.quarter,.clock_decimal,.away.points,.home.points' $game_filename`
+		sa=($s)
+		echo "${da[0]}@${sa[2]}@${da[1]}@${sa[3]}@${sa[0]}Q ${sa[1]}" >> $scores_tbldef_file
+	elif [ "$status" = "scheduled" ]
+	then
+		d=`echo $s | jq -rc .away.alias,.home.alias,.id,.scheduled`
+		da=($d)
+		scheduled_edited=`TZ=$tzone date -d ${da[3]} +'%I:%M'`
+		echo "${da[0]}@-@${da[1]}@-@${scheduled_edited}" >> $scores_tbldef_file
+	else
+		echo "bad@game@data@here@boyee" >> $scores_tbldef_file
+	fi
+done
+
+echo ".TE" >> $scores_tbldef_file
+
+tbl $scores_tbldef_file | nroff -Tascii >> $scores_tbl_file_nroff
+sed -i.bak '/^[[:space:]]*$/d' $scores_tbl_file_nroff
+
+cat $scores_tbl_file_nroff
+
+# DONE WITH SCORES FILE
+# curl --location --request GET 'https://api.sportradar.us/nba/trial/v7/en/seasons/2022/REG/standings.json?api_key=p6b9eauvxfwskkgykxxvrzqn'
+# | jq '[ .conferences[0].divisions[].teams[] ] | sort_by(.calc_rank.conf_rank)'
+# {{baseUrl}}/:locale/seasons/:year/:season_type/standings.{{format}}
+
+sleep 2
+standings_endpoint="/${locale}/seasons/2022/REG/standings.json"
+curl --location --request GET ${baseUrl}${standings_endpoint}${key_pararm} > $standings_file
 
 function begin_tbldef_standings {
 cat << EHERE2 > $1
@@ -75,56 +110,33 @@ EHERE2
 begin_tbldef_standings $standings_tbldef_file_east "EAST"
 begin_tbldef_standings $standings_tbldef_file_west "WEST"
 
+sorted_west="${work_dir}/sorted_west.json"
+jq '[ .conferences[0].divisions[].teams[] ] | sort_by(.calc_rank.conf_rank)' $standings_file > $sorted_west
+
+sorted_east="${work_dir}/sorted_east.json"
+jq '[ .conferences[1].divisions[].teams[] ] | sort_by(.calc_rank.conf_rank)' $standings_file > $sorted_east
+
 function generate_standings {
-	jq -rc -f $1 $standings_file | while read s; do
-		tn=$(echo $s | jq -rc '.teamSitesOnly.teamName')
-		tw=$(echo $s | jq -rc '.win')
-		tl=$(echo $s | jq -rc '.loss')
-		#ta=($t)
-		ta_len=${#da[@]}
-		echo "${tn}@${tw}@${tl}" >> $2
+	jq -rc '.[]' $1 | while read s; do
+		d=`echo $s | jq -rc .name,.wins,.losses`
+		da=($d)
+		da_len=${#da[@]}
+		echo "${da[0]}@${da[1]}@${da[2]}" >> $2
 	done
 	echo ".TE" >> $2
 }
 
-generate_standings $standings_jqfile_east $standings_tbldef_file_east
-generate_standings $standings_jqfile_west $standings_tbldef_file_west
+generate_standings $sorted_east $standings_tbldef_file_east
+generate_standings $sorted_west $standings_tbldef_file_west
 
-jq -rc '.games | .[]' $scores_file | while read s; do
-	d=`echo $s | jq -rc .vTeam.triCode,.vTeam.score,.hTeam.triCode,.hTeam.score`
-	da=($d)
-	da_len=${#da[@]} 
-	if [[ $da_len -eq 2 ]]
-	then
-		echo "| ${da[0]}  -  | ${da[1]}  -  |" >> $scores_tbl_file_handroll
-		echo "${da[0]}@-@${da[1]}@-" >> $scores_tbldef_file
-	elif [[ $da_len -eq 4 ]]
-	then
-		vts=`printf '%3s' "${da[1]}"`
-		hts=`printf '%3s' "${da[3]}"`
-		echo "| ${da[0]} $vts | ${da[2]} $hts |" >> $scores_tbl_file_handroll
-		echo "${da[0]}@${da[1]}@${da[2]}@${da[3]}" >> $scores_tbldef_file
- 	else
-		echo "bad game data" >> $scores_tbl_file_handroll
-		echo "bad@game@data@here" >> $scores_tbldef_file
-		
-	fi
-done
-
-echo "=====================" >> $scores_tbl_file_handroll
-
-echo ".TE" >> $scores_tbldef_file
-
-tbl $scores_tbldef_file | nroff -Tascii >> $scores_tbl_file_nroff
 tbl $standings_tbldef_file_east | nroff -Tascii > $standings_tbl_file_east
 tbl $standings_tbldef_file_west | nroff -Tascii > $standings_tbl_file_west
-#on BSD sed wants "" as first arg, not so on Linux
-#using sed to remove blank lines coming out of tbl/nroff
-sed -i.bak '/^[[:space:]]*$/d' $scores_tbl_file_nroff
+
 sed -i.bak '/^[[:space:]]*$/d' $standings_tbl_file_east
 sed -i.bak '/^[[:space:]]*$/d' $standings_tbl_file_west
-#sed -i "" '/^[[:space:]]*$/d' $scores_tbl_file_nroff
+
 paste -d'*' $standings_tbl_file_east $standings_tbl_file_west $scores_tbl_file_nroff > $nba_final
-echo "Game Date: ${tdate:4:2}-${tdate:6:2}-${tdate:0:4}" >> $nba_final
-echo "Standings/Scoreboard Generated: ${gdate}" >> $nba_final
+
 cat $nba_final
+
+exit

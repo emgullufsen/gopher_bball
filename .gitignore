@@ -4,3 +4,5 @@ gopher_files/
 gophermap
 *.tbldef
 *.tbl
+.env
+nba_final.txt

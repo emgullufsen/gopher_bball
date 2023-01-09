@@ -1,1 +1,0 @@
-.league.standard.conference.east | .[]
