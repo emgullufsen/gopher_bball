@@ -87,7 +87,6 @@ sed -i.bak '/^[[:space:]]*$/d' $scores_tbl_file_nroff
 cat $scores_tbl_file_nroff
 
 # DONE WITH SCORES FILE
-# curl --location --request GET 'https://api.sportradar.us/nba/trial/v7/en/seasons/2022/REG/standings.json?api_key=p6b9eauvxfwskkgykxxvrzqn'
 # | jq '[ .conferences[0].divisions[].teams[] ] | sort_by(.calc_rank.conf_rank)'
 # {{baseUrl}}/:locale/seasons/:year/:season_type/standings.{{format}}
 
