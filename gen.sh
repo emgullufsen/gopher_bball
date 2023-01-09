@@ -133,7 +133,7 @@ sed -i.bak '/^[[:space:]]*$/d' $standings_tbl_file_east
 sed -i.bak '/^[[:space:]]*$/d' $standings_tbl_file_west
 
 paste -d'*' $standings_tbl_file_east $standings_tbl_file_west $scores_tbl_file_nroff > $nba_final
-
+date >> $nba_final
 cat $nba_final
 
 exit
