@@ -118,7 +118,11 @@ function generate_standings {
 		d=`echo $s | jq -rc .name,.wins,.losses`
 		da=($d)
 		da_len=${#da[@]}
-		echo "${da[0]}@${da[1]}@${da[2]}" >> $2
+		if [ ${da[0]} == "Trail" ] then
+			echo "${da[0]}@${da[1]} ${da[2]}@${da[3]}" >> $2
+		else
+			echo "${da[0]}@${da[1]}@${da[2]}" >> $2
+		fi
 	done
 	echo ".TE" >> $2
 }
