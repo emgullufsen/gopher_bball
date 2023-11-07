@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/bin/ksh
 #invoke with `bash gen.sh` if this isn't your bash location
 #by Eric Gullufsen
 
@@ -10,7 +10,7 @@ function cleanup {
 trap cleanup EXIT
 
 # get environment (esp. variable SPORTRADAR_API_KEY) from secret file
-source .env
+. ./.env
 
 #files and endpoints - global vars
 scores_file=${work_dir}/scores_j.json
@@ -28,7 +28,10 @@ locale="en"
 tzone="America/New_York"
 
 # create m, d, and Y variables containing date info
-read -r m d Y <<< "$(TZ='America/New_York' date +'%m %d %Y')"
+read -r m d Y <<EOD
+$(TZ='America/New_York' date +'%m %d %Y')
+EOD
+
 games_endpoint="/${locale}/games/${Y}/${m}/${d}/schedule.json"
 key_pararm="?api_key=${SPORTRADAR_API_KEY}"
 
@@ -60,18 +63,18 @@ jq -rc '.games | .[]' $scores_file | while read s; do
 	if [ "$status" = "closed" ] || [ "$status" = "inprogress" ]
 	then
 		d=`echo $s | jq -rc .away.alias,.home.alias,.id,.scheduled`
-		da=($d)
+		da=$d
 		scores_endpoint="/${locale}/games/${da[2]}/boxscore.json"
 		game_filename="${work_dir}/game-${da[2]}.json"
 		sleep 2
 		curl --location --request GET ${baseUrl}${scores_endpoint}${key_pararm} > $game_filename
 		s=`jq -rc '.quarter,.clock_decimal,.away.points,.home.points' $game_filename`
-		sa=($s)
+		sa=$s
 		echo "${da[0]}@${sa[2]}@${da[1]}@${sa[3]}@${sa[0]}Q ${sa[1]}" >> $scores_tbldef_file
 	elif [ "$status" = "scheduled" ]
 	then
 		d=`echo $s | jq -rc .away.alias,.home.alias,.id,.scheduled`
-		da=($d)
+		da=$d
 		scheduled_edited=`TZ=$tzone date -d ${da[3]} +'%I:%M'`
 		echo "${da[0]}@-@${da[1]}@-@${scheduled_edited}" >> $scores_tbldef_file
 	else
@@ -116,7 +119,7 @@ jq '[ .conferences[1].divisions[].teams[] ] | sort_by(.calc_rank.conf_rank)' $st
 function generate_standings {
 	jq -rc '.[]' $1 | while read s; do
 		d=`echo $s | jq -rc .name,.wins,.losses`
-		da=($d)
+		da=$d
 		da_len=${#da[@]}
 		if [ ${da[0]} == "Trail" ] 
 		then
