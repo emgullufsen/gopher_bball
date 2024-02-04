@@ -84,14 +84,14 @@ echo ".TE" >> $scores_tbldef_file
 tbl $scores_tbldef_file | nroff -Tascii >> $scores_tbl_file_nroff
 sed -i.bak '/^[[:space:]]*$/d' $scores_tbl_file_nroff
 
-cat $scores_tbl_file_nroff
+#cat $scores_tbl_file_nroff
 
 # DONE WITH SCORES FILE
 # | jq '[ .conferences[0].divisions[].teams[] ] | sort_by(.calc_rank.conf_rank)'
 # {{baseUrl}}/:locale/seasons/:year/:season_type/standings.{{format}}
 
 sleep 2
-standings_endpoint="/${locale}/seasons/2022/REG/standings.json"
+standings_endpoint="/${locale}/seasons/2023/REG/standings.json"
 curl --location --request GET ${baseUrl}${standings_endpoint}${key_pararm} > $standings_file
 
 function begin_tbldef_standings {
