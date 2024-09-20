@@ -28,8 +28,20 @@ locale="en"
 tzone="America/New_York"
 
 # create m, d, and Y variables containing date info
-read -r m d Y <<< "$(TZ='America/New_York' date +'%m %d %Y')"
+if [ $1 = "test" ]
+then
+	Y=2023
+	d=21
+	m=11
+	echo "m: $m, d: $d, Y: $Y"
+else
+	read -r m d Y <<< "$(TZ='America/New_York' date +'%m %d %Y')"
+	echo "m: $m, d: $d, Y: $Y"
+fi
 games_endpoint="/${locale}/games/${Y}/${m}/${d}/schedule.json"
+key_pararm="?api_key=${SPORTRADAR_API_KEY}"
+games_endpoint_full=${baseUrl}${games_endpoint}${key_pararm}
+echo "games_endpoing_full is: $games_endpoint_full"
 key_pararm="?api_key=${SPORTRADAR_API_KEY}"
 
 # NOTE: status of games is 'scheduled', 'inprogress', or 'closed'
@@ -38,7 +50,7 @@ key_pararm="?api_key=${SPORTRADAR_API_KEY}"
 # ok, get games for today
 # example: # https://api.sportradar.us/nba/trial/v7/en/games/2023/01/08/schedule.json?api_key=<KEY>
 
-curl --location --request GET ${baseUrl}${games_endpoint}${key_pararm} > $scores_file
+curl --location --request GET ${games_endpoint_full} > $scores_file
 
 # cat $scores_file
 
@@ -91,7 +103,8 @@ sed -i.bak '/^[[:space:]]*$/d' $scores_tbl_file_nroff
 # {{baseUrl}}/:locale/seasons/:year/:season_type/standings.{{format}}
 
 sleep 2
-standings_endpoint="/${locale}/seasons/2023/REG/standings.json"
+standings_endpoint="/${locale}/seasons/${Y}/REG/standings.json"
+echo "standings_endpoint is: ${standings_endpoint}"
 curl --location --request GET ${baseUrl}${standings_endpoint}${key_pararm} > $standings_file
 
 function begin_tbldef_standings {
