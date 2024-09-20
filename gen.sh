@@ -93,7 +93,7 @@ done
 
 echo ".TE" >> $scores_tbldef_file
 
-tbl $scores_tbldef_file | nroff -Tascii >> $scores_tbl_file_nroff
+groff -t -Tascii $scores_tbldef_file >> $scores_tbl_file_nroff
 sed -i.bak '/^[[:space:]]*$/d' $scores_tbl_file_nroff
 
 #cat $scores_tbl_file_nroff
@@ -144,8 +144,8 @@ function generate_standings {
 generate_standings $sorted_east $standings_tbldef_file_east
 generate_standings $sorted_west $standings_tbldef_file_west
 
-tbl $standings_tbldef_file_east | nroff -Tascii > $standings_tbl_file_east
-tbl $standings_tbldef_file_west | nroff -Tascii > $standings_tbl_file_west
+groff -t -Tascii $standings_tbldef_file_east > $standings_tbl_file_east
+groff -t -Tascii $standings_tbldef_file_west > $standings_tbl_file_west
 
 sed -i.bak '/^[[:space:]]*$/d' $standings_tbl_file_east
 sed -i.bak '/^[[:space:]]*$/d' $standings_tbl_file_west
